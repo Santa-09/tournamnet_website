@@ -1614,80 +1614,79 @@
     </footer>
 
     <script>
-        document.getElementById('freeFireForm').addEventListener('submit', function (e) {
-            e.preventDefault();
+    document.getElementById('freeFireForm').addEventListener('submit', function (e) {
+        e.preventDefault();
 
-            // Hide messages and show spinner
-            document.getElementById('successMessage').style.display = 'none';
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('loadingSpinner').style.display = 'block';
+        const form = this;
+        const successMsg = document.getElementById('successMessage');
+        const errorMsg = document.getElementById('errorMessage');
+        const spinner = document.getElementById('loadingSpinner');
 
-            // Validate form
-            if (!this.checkValidity()) {
-                document.getElementById('loadingSpinner').style.display = 'none';
-                document.getElementById('errorMessage').style.display = 'block';
-                document.getElementById('errorMessage').textContent = 'Please fill all required fields correctly';
-                document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
-                return;
+        // Hide previous messages and show spinner
+        successMsg.style.display = 'none';
+        errorMsg.style.display = 'none';
+        spinner.style.display = 'block';
+
+        // Form validation check
+        if (!form.checkValidity()) {
+            spinner.style.display = 'none';
+            errorMsg.style.display = 'block';
+            errorMsg.textContent = 'Please fill all required fields correctly.';
+            errorMsg.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+
+        const formData = new FormData(form);
+        const data = {
+            gameType: 'freefire',
+            timestamp: new Date().toISOString()
+        };
+
+        for (let [key, value] of formData.entries()) {
+            if (key.endsWith('[]')) {
+                const baseKey = key.replace('[]', '');
+                if (!data[baseKey]) data[baseKey] = [];
+                data[baseKey].push(value);
+            } else {
+                data[key] = value;
             }
+        }
 
-            // Get form data
-            const formData = new FormData(this);
-            const data = {
-                gameType: 'freefire',
-                timestamp: new Date().toISOString()
-            };
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbzK5lWwVejnxT7A6ka4bb6lkF2QD9ChWQuolMmGBP7lEmoRcXqaUazZwLWyHZ7zRwg4Mw/exec';
 
-            // Convert FormData to object
-            for (let [key, value] of formData.entries()) {
-                if (key.endsWith('[]')) {
-                    const baseKey = key.replace('[]', '');
-                    if (!data[baseKey]) data[baseKey] = [];
-                    data[baseKey].push(value);
-                } else {
-                    data[key] = value;
-                }
+        fetch(scriptUrl, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow'
+        })
+        .then(response => response.json())
+        .then(result => {
+            spinner.style.display = 'none';
+            if (result.success) {
+                successMsg.style.display = 'block';
+                successMsg.scrollIntoView({ behavior: 'smooth' });
+
+                setTimeout(() => {
+                    sessionStorage.setItem('registrationData', JSON.stringify(data));
+                    window.location.href = 'payment.html';
+                }, 2000);
+            } else {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = result.message || 'Registration failed. Please try again.';
+                errorMsg.scrollIntoView({ behavior: 'smooth' });
             }
-
-            // Send to Google Apps Script
-            const scriptUrl = 'https://script.google.com/macros/s/AKfycbzG04Mn7mLfKWsIsy1kE3ohu9FQk_imCE9mxcRXGzUB6ywCb5lmzpJ0P5_hxHnEQ9jx7g/execv'; // Replace with your own
-
-            fetch(scriptUrl, {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                redirect: 'follow'
-            })
-                .then(response => response.json())
-                .then(result => {
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                    if (result.success) {
-                        document.getElementById('successMessage').style.display = 'block';
-                        document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
-
-                        // Optional redirect after success
-                        setTimeout(() => {
-                            sessionStorage.setItem('registrationData', JSON.stringify(data));
-                            window.location.href = 'payment.html'; // or any thank-you page
-                        }, 2000);
-                    } else {
-                        document.getElementById('errorMessage').style.display = 'block';
-                        document.getElementById('errorMessage').textContent = result.message || 'Registration failed. Please try again.';
-                        document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                    document.getElementById('errorMessage').style.display = 'block';
-                    document.getElementById('errorMessage').textContent = 'Network error. Please check your connection and try again.';
-                    document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
-                });
+        })
+        .catch(error => {
+            spinner.style.display = 'none';
+            errorMsg.style.display = 'block';
+            errorMsg.textContent = 'Network error. Please check your connection and try again.';
+            errorMsg.scrollIntoView({ behavior: 'smooth' });
         });
-    </script>
-
+    });
+</script>
 </body>
 
 </html>
