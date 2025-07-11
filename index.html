@@ -1612,214 +1612,74 @@
     </footer>
 
     <script>
-        document.getElementById('freeFireForm').addEventListener('submit', function (e) {
-            e.preventDefault();
+    document.getElementById('freeFireForm').addEventListener('submit', function (e) {
+        e.preventDefault();
 
-            // Hide messages and show spinner
-            document.getElementById('successMessage').style.display = 'none';
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('loadingSpinner').style.display = 'block';
+        // Hide messages and show spinner
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('loadingSpinner').style.display = 'block';
 
-            // Validate form
-            if (!this.checkValidity()) {
+        // Validate form
+        if (!this.checkValidity()) {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorMessage').textContent = 'Please fill all required fields correctly';
+            document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+
+        // Get form data
+        const formData = new FormData(this);
+        const data = {
+            gameType: 'freefire',
+            timestamp: new Date().toISOString()
+        };
+
+        // Convert FormData to object
+        for (let [key, value] of formData.entries()) {
+            if (key.endsWith('[]')) {
+                const baseKey = key.replace('[]', '');
+                if (!data[baseKey]) data[baseKey] = [];
+                data[baseKey].push(value);
+            } else {
+                data[key] = value;
+            }
+        }
+
+        // Send to Google Apps Script
+        const scriptUrl = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // Replace with your actual Google Apps Script URL
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(result => {
                 document.getElementById('loadingSpinner').style.display = 'none';
-                document.getElementById('errorMessage').style.display = 'block';
-                document.getElementById('errorMessage').textContent = 'Please fill all required fields correctly';
-                document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
-                return;
-            }
-
-            // Get form data
-            const formData = new FormData(this);
-            const data = {
-                gameType: 'freefire',
-                timestamp: new Date().toISOString()
-            };
-
-            // Convert FormData to object
-            for (let [key, value] of formData.entries()) {
-                if (key.endsWith('[]')) {
-                    const baseKey = key.replace('[]', '');
-                    if (!data[baseKey]) data[baseKey] = [];
-                    data[baseKey].push(value);
+                if (result.success) {
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+                    // Reset form after successful submission
+                    document.getElementById('freeFireForm').reset();
                 } else {
-                    data[key] = value;
-                }
-            }
-
-            // Send to Google Apps Script
-            const scriptUrl = 'https://script.google.com/macros/s/AKfycbyc72dQB7GvshCUa5LWAmaDwesm-SdHbJhjCglL8gEh_5SFSbGW3Wx_wBfBbbmjTU-K7g/exec'; // Replace with your web app URL
-
-            fetch(scriptUrl, {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json'
+                    document.getElementById('errorMessage').style.display = 'block';
+                    document.getElementById('errorMessage').textContent = result.message || 'Registration failed. Please try again.';
+                    document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
                 }
             })
-                .then(response => response.json())
-                .then(result => {
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                    if (result.success) {
-                        document.getElementById('successMessage').style.display = 'block';
-                        document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
-
-                        // Redirect to payment after 2 seconds
-                        setTimeout(() => {
-                            sessionStorage.setItem('registrationData', JSON.stringify(data));
-                            window.location.href = 'payment.html';
-                        }, 2000);
-                    } else {
-                        document.getElementById('errorMessage').style.display = 'block';
-                        document.getElementById('errorMessage').textContent = result.message || 'Registration failed. Please try again.';
-                        document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                    document.getElementById('errorMessage').style.display = 'block';
-                    document.getElementById('errorMessage').textContent = 'Network error. Please check your connection and try again.';
-                    document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
-                });
-        });
-    </script>
-
-    <script>
-        // Intersection Observer for scroll animations
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate');
-                }
+            .catch(error => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorMessage').textContent = 'Network error. Please check your connection and try again.';
+                document.getElementById('errorMessage').scrollIntoView({ behavior: 'smooth' });
+                console.error('Error:', error);
             });
-        }, {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        });
-
-        // Observe all animated elements
-        const animatedElements = document.querySelectorAll('.fade-in, .slide-left, .slide-right, .scale-in, .stagger-fade');
-        animatedElements.forEach(el => {
-            observer.observe(el);
-        });
-
-        // Mobile menu functionality
-        const hamburger = document.querySelector('.hamburger');
-        const mobileMenu = document.querySelector('.mobile-menu');
-        const overlay = document.querySelector('.overlay');
-        const mobileLinks = document.querySelectorAll('.mobile-menu .nav-links a');
-
-        hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('open');
-            mobileMenu.classList.toggle('open');
-            overlay.classList.toggle('active');
-            document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : 'auto';
-        });
-
-        overlay.addEventListener('click', () => {
-            hamburger.classList.remove('open');
-            mobileMenu.classList.remove('open');
-            overlay.classList.remove('active');
-            document.body.style.overflow = 'auto';
-        });
-
-        // Close mobile menu when clicking on links
-        mobileLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                hamburger.classList.remove('open');
-                mobileMenu.classList.remove('open');
-                overlay.classList.remove('active');
-                document.body.style.overflow = 'auto';
-            });
-        });
-
-        // Policy section toggle functionality
-        const privacyLink = document.getElementById('privacyLink');
-        const termsLink = document.getElementById('termsLink');
-        const policySections = document.querySelectorAll('.policy-section');
-
-        function hideAllPolicySections() {
-            policySections.forEach(section => {
-                section.classList.remove('active');
-            });
-        }
-
-        function showPolicySection(sectionId) {
-            hideAllPolicySections();
-            document.getElementById(sectionId).classList.add('active');
-            window.scrollTo({
-                top: document.getElementById(sectionId).offsetTop - 80,
-                behavior: 'smooth'
-            });
-        }
-
-        privacyLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showPolicySection('privacy');
-        });
-
-        termsLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showPolicySection('terms');
-        });
-
-        // Mobile policy links
-        const privacyMobile = document.querySelector('.privacy-mobile');
-        const termsMobile = document.querySelector('.terms-mobile');
-
-        if (privacyMobile) {
-            privacyMobile.addEventListener('click', (e) => {
-                e.preventDefault();
-                hamburger.classList.remove('open');
-                mobileMenu.classList.remove('open');
-                overlay.classList.remove('active');
-                document.body.style.overflow = 'auto';
-                showPolicySection('privacy');
-            });
-        }
-
-        if (termsMobile) {
-            termsMobile.addEventListener('click', (e) => {
-                e.preventDefault();
-                hamburger.classList.remove('open');
-                mobileMenu.classList.remove('open');
-                overlay.classList.remove('active');
-                document.body.style.overflow = 'auto';
-                showPolicySection('terms');
-            });
-        }
-
-        // Smooth scrolling for all anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                // Close mobile menu if open
-                if (mobileMenu.classList.contains('open')) {
-                    hamburger.classList.remove('open');
-                    mobileMenu.classList.remove('open');
-                    overlay.classList.remove('active');
-                    document.body.style.overflow = 'auto';
-                }
-
-                // Skip if it's a policy link (handled separately)
-                if (this === privacyLink || this === termsLink ||
-                    this === privacyMobile || this === termsMobile) {
-                    return;
-                }
-
-                const targetId = this.getAttribute('href');
-                if (targetId !== '#') {
-                    e.preventDefault();
-                    const targetElement = document.querySelector(targetId);
-                    if (targetElement) {
-                        window.scrollTo({
-                            top: targetElement.offsetTop - 80,
-                            behavior: 'smooth'
-                        });
-                    }
-                }
-            });
-        });
-    </script>
+    });
+</script>
 </body>
 
 </html>
